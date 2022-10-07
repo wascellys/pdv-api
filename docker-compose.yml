@@ -1,0 +1,63 @@
+version: "3.6"
+
+services:
+
+  db:
+    image: postgres:14-alpine
+    env_file: .env
+    container_name: pdv-db
+    hostname: ${DB_HOST}
+    volumes:
+      - data_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    networks:
+      - pdv
+
+  api:
+    build: .
+    container_name: pdv-api
+    env_file: .env
+    command: >
+        sh -c "python manage.py makemigrations &&
+               python manage.py makemigrations api &&
+               python manage.py migrate &&
+               python manage.py migrate api &&
+               python manage.py runserver 0.0.0.0:8000 &&
+               coverage run -m pytest &&
+               coverage report -m &&
+               coverage html"
+    environment:
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_DB=${DB_NAME}
+      - DATE_INIT_MAX=${DATE_INIT_MAX}
+      - DATE_FINAL_MAX=${DATE_FINAL_MAX}
+      - DATE_INIT_MIN=${DATE_INIT_MIN}
+      - DATE_FINAL_MIN=${DATE_FINAL_MIN}
+      - WEB_HOST=${WEB_HOST}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+    volumes:
+      - .:/app/
+    links:
+      - db:db
+    ports:
+      - 8000:8000
+    networks:
+      - pdv
+    depends_on:
+      - db
+
+volumes:
+  data_db:
+
+networks:
+  pdv:
+    driver: bridge
