@@ -4,6 +4,7 @@ from decimal import Decimal
 from decouple import config
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,16 +18,82 @@ class ClientViewSet(ModelViewSet):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
 
-    def get_queryset(self):
-        return self.queryset
+    def list(self, request, *args, **kwargs):
+        try:
+            clients = Client.objects.all()
+            serializers = self.serializer_class(clients, many=True)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(e.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            client = Client.objects.get(id=kwargs['pk'])
+            serializer = self.serializer_class(client, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response({'message': 'Data does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            client = Client.objects.get(id=kwargs['pk'])
+            serializers = self.serializer_class(client)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            return Response({'message': 'Data does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SellerViewSet(ModelViewSet):
     queryset = Seller.objects.all()
     serializer_class = SellerSerializer
 
-    def get_queryset(self):
-        return self.queryset
+    def list(self, request, *args, **kwargs):
+        try:
+            sellers = Seller.objects.all()
+            serializers = self.serializer_class(sellers, many=True)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(e.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            seller = Seller.objects.get(id=kwargs['pk'])
+            serializer = self.serializer_class(seller, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response({'message': 'Data does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            seller = Seller.objects.get(id=kwargs['pk'])
+            serializers = self.serializer_class(seller)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            return Response({'message': 'Data does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=True, methods=['get'])
     def commission(self, request, pk=None):
@@ -49,8 +116,47 @@ class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-    def get_queryset(self):
-        return self.queryset
+    def list(self, request, *args, **kwargs):
+        try:
+            products = Product.objects.all()
+            params = request.query_params
+            if params:
+                filter = params.get("filter")
+                products = products.filter(Q(name__icontains=filter) | Q(pk__icontains=filter))
+
+
+            serializers = self.serializer_class(products, many=True)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(e.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            product = Product.objects.get(id=kwargs['pk'])
+            serializer = self.serializer_class(product, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response({'message': 'Data does not exist!'}, status=status.HTTP_404_NOT_FOUND)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            product = Product.objects.get(id=kwargs['pk'])
+            serializers = self.serializer_class(product)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            return Response({'message': 'Data does not exist!'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SaleViewSet(ModelViewSet):

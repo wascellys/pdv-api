@@ -24,11 +24,13 @@ services:
     container_name: pdv-api
     env_file: .env
     command: >
-        sh -c "python manage.py makemigrations
-               python manage.py migrate
-               python manage.py runserver 0.0.0.0:8000
-               coverage run -m pytest api/tests 
-               coverage report -m
+        sh -c "python manage.py makemigrations &&
+               python manage.py makemigrations api &&
+               python manage.py migrate &&
+               python manage.py migrate api &&
+               python manage.py runserver 0.0.0.0:8000 &&
+               coverage run -m pytest &&
+               coverage report -m &&
                coverage html"
     environment:
       - POSTGRES_HOST=${DB_HOST}
