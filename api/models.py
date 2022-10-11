@@ -1,5 +1,5 @@
-from datetime import datetime
-
+from decimal import Decimal
+import datetime
 import django
 from django.db import models
 
@@ -49,6 +49,22 @@ class Sale(models.Model):
 
     def __str__(self):
         return str(self.seller.name)
+
+
+    def calc_commission(self, commissions, date_max_final, date_max_init, product, time_sale):
+        if time_sale > datetime.time(int(date_max_init[0]), int(date_max_init[1]),
+                                     int(date_max_init[2])) and time_sale < datetime.time(
+            int(date_max_final[0]),
+            int(date_max_final[1]),
+            int(date_max_final[2])):
+            commissions.append(Decimal(product.commission) / 100 * Decimal(product.price) if Decimal(
+                product.commission) <= 5 else Decimal(5 / 100) * Decimal(product.price))
+        else:
+            commissions.append(Decimal(4 / 100) * Decimal(product.price) if Decimal(
+                product.commission) <= 4 else Decimal(product.commission) / 100 * Decimal(
+                product.price))
+
+        self.sale_commission = round(sum(commissions), 2)
 
 
 class OrdersSale(models.Model):

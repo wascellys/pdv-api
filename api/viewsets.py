@@ -163,9 +163,13 @@ class SaleViewSet(ModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
 
-    def list(self, request):
-        serializers = self.serializer_class(self.queryset, many=True)
-        return Response(data=serializers.data, status=status.HTTP_200_OK)
+    def list(self, request, *args, **kwargs):
+        try:
+            sales = Sale.objects.all()
+            serializers = self.serializer_class(sales, many=True)
+            return Response(data=serializers.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(e.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -187,25 +191,15 @@ class SaleViewSet(ModelViewSet):
                         time_sale = sale.date.time()
                         date_max_init = config("DATE_INIT_MAX").split(",")
                         date_max_final = config("DATE_FINAL_MAX").split(",")
-                        if time_sale > datetime.time(int(date_max_init[0]), int(date_max_init[1]),
-                                                     int(date_max_init[2])) and time_sale < datetime.time(
-                            int(date_max_final[0]),
-                            int(date_max_final[1]),
-                            int(date_max_final[2])):
-                            commissions.append(Decimal(product.commission) / 100 * Decimal(product.price) if Decimal(
-                                product.commission) <= 5 else Decimal(5 / 100) * Decimal(product.price))
-                        else:
-                            commissions.append(Decimal(4 / 100) * Decimal(product.price) if Decimal(
-                                product.commission) <= 4 else Decimal(product.commission) / 100 * Decimal(
-                                product.price))
+                        sale.calc_commission(commissions, date_max_final, date_max_init, product, time_sale)
 
-                sale.sale_commission = round(sum(commissions), 2)
                 sale.total = round(sum(total), 2)
 
                 sale.save()
                 return Response(data=serializers.data, status=status.HTTP_201_CREATED)
         except (Exception,):
             return Response({'message': 'Error processing the sale'}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def retrieve(self, request, *args, **kwargs):
         try:

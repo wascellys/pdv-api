@@ -41,6 +41,10 @@ def test_delete_sellers_204(api_client, create_seller):
     response = api_client.delete(f'{URL}/sellers/{create_seller.id}/')
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
+def test_seller_commission_200(api_client, create_seller):
+    response = api_client.get(f'{URL}/sellers/{create_seller.id}/commission/')
+    assert response.status_code == status.HTTP_200_OK
+
 
 def test_update_sellers_not_exists_404(api_client):
     body = {"name": "Morais Test"}
